@@ -1,0 +1,5 @@
+name = Form Rules
+description = Pass the values from webform fields to other fields after specific calculation.
+core = 7.x
+files[] = form_rules.module
+files[] = form_rules.install
