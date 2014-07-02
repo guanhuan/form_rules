@@ -11,21 +11,25 @@ function form_rules_form_alter(&$form, &$form_state, $form_id) {
   $keys = array($brand_entries_key, $product_number_key, $submission_price_key);
   $params = array();
   $resultKey = null;
+  $count = 0;
   
   if($form_id == $awards_form_id && isset($form_state['storage'])){
 	$components = $form_state['storage']['component_tree']['children'];
 	$submissions = $form_state['storage']['submitted'];
 	foreach ($components as $key => $value) {
 		if(in_array($value['form_key'], $keys)){
-			$params[$value['form_key']] = $submissions[$key];
+			if(isset($submissions[$key])){
+				$params[$value['form_key']] = $submissions[$key];
+				$count++;
+			}
 		}else if($value['form_key'] == $contribution_amount_key){
 			$resultKey = $key;
 		}
 	}
 
-	if(!is_null($resultKey)){
+	if(!is_null($resultKey)&&$count==3){
 		$result = ($params[$brand_entries_key] + $params[$product_number_key]) * $params[$submission_price_key];
-		$submissions = $form_state['storage']['submitted'][$resultKey] = $result;
+		$form['submitted'][$contribution_amount_key]['#default_value'] = (string)$result;
 	}
   }
 }
