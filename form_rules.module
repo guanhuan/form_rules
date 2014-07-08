@@ -2,34 +2,52 @@
 
 function form_rules_form_alter(&$form, &$form_state, $form_id) {
   
-  $awards_form_id = variable_get('awards_form_id', '');
-  $brand_entries_key = variable_get('brand_entries_key', '');
-  $product_number_key = variable_get('product_number_key', '');
-  $submission_price_key = variable_get('submission_price_key', '');
-  $contribution_amount_key = variable_get('contribution_amount_key', '');
+  $custom_form_id = variable_get('custom_form_id', '');
+  $contribution_amount_key = "civicrm_1_contribution_1_contribution_total_amount";
+  $room_options_key = variable_get('room_options_key', '');
+  $extra_set_key = variable_get('extra_set_key', '');
   
-  $keys = array($brand_entries_key, $product_number_key, $submission_price_key);
+  $extra_room_per_night = variable_get('extra_room_per_night', '');
+  $non_reach_child_acitivies = variable_get('non_reach_child_acitivies', '');
+  $delegate_day_rate_member = variable_get('delegate_day_rate_member', '');
+  $delegate_day_rate_non_member = variable_get('delegate_day_rate_non_member', '');
+  $dinner_and_dance_tickets = variable_get('dinner_and_dance_tickets', '');
+  
+  $prices = array(
+  	'extra_room_per_night' => variable_get('extra_room_per_night_price', ''),
+  	'non_reach_child_acitivies' => variable_get('non_reach_child_acitivies_price', ''),
+  	'delegate_day_rate_member' => variable_get('delegate_day_rate_member_price', ''),
+  	'delegate_day_rate_non_member' => variable_get('delegate_day_rate_non_member_price', ''),
+  	'dinner_and_dance_tickets' => variable_get('dinner_and_dance_tickets_price', ''),
+  );
+  
+  $keys = array($room_options_key, $extra_room_per_night, $non_reach_child_acitivies, $delegate_day_rate_member, $delegate_day_rate_non_member, $dinner_and_dance_tickets);
   $params = array();
-  $resultKey = null;
-  $count = 0;
+  $extra_total = 0;
+  $room_options_total = 0;
   
-  if($form_id == $awards_form_id && isset($form_state['storage'])){
+  if($form_id == $custom_form_id && isset($form_state['storage'])){
 	$components = $form_state['storage']['component_tree']['children'];
 	$submissions = $form_state['storage']['submitted'];
 	foreach ($components as $key => $value) {
-		if(in_array($value['form_key'], $keys)){
-			if(isset($submissions[$key])){
-				$params[$value['form_key']] = $submissions[$key];
-				$count++;
+		if($value['form_key'] == $extra_set_key){
+			foreach ($value['children'] as $child_key => $child_value) {
+				if(in_array($child_value['form_key'], $keys)){
+					if(isset($submissions[$child_key])){
+						$params[$child_value['form_key']] = $submissions[$child_key];
+					}
+				}
 			}
-		}else if($value['form_key'] == $contribution_amount_key){
-			$resultKey = $key;
+		}else if($value['form_key'] == $room_options_key){
+			$room_options_total = (int)$submissions[$key];
 		}
 	}
 
-	if(!is_null($resultKey)&&$count==3){
-		$result = ($params[$brand_entries_key] + $params[$product_number_key]) * $params[$submission_price_key];
-		$form['submitted'][$contribution_amount_key]['#default_value'] = (string)$result;
+	foreach ($params as $key => $value) {
+		$extra_total += ($value - 1) * $prices[$key];
 	}
+
+	$result = $extra_total + $room_options_total;
+	$form['submitted'][$contribution_amount_key]['#default_value'] = (string)$result;
   }
 }
