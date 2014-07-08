@@ -3,7 +3,7 @@
 function form_rules_form_alter(&$form, &$form_state, $form_id) {
   
   $custom_form_id = variable_get('custom_form_id', '');
-  $contribution_amount_key = "civicrm_1_contribution_1_contribution_total_amount";
+  $contribution_amount_key = variable_get('contribution_amount_key', '');
   $room_options_key = variable_get('room_options_key', '');
   $extra_set_key = variable_get('extra_set_key', '');
   
@@ -28,12 +28,12 @@ function form_rules_form_alter(&$form, &$form_state, $form_id) {
   
   if($form_id == $custom_form_id && isset($form_state['storage'])){
 	$components = $form_state['storage']['component_tree']['children'];
-	$submissions = $form_state['storage']['submitted'];
+	$submissions = $form_state['storage']['submitted'];dpm($submissions);
 	foreach ($components as $key => $value) {
 		if($value['form_key'] == $extra_set_key){
 			foreach ($value['children'] as $child_key => $child_value) {
 				if(in_array($child_value['form_key'], $keys)){
-					if(isset($submissions[$child_key])){
+					if(is_numeric($submissions[$child_key])){
 						$params[$child_value['form_key']] = $submissions[$child_key];
 					}
 				}
@@ -44,8 +44,9 @@ function form_rules_form_alter(&$form, &$form_state, $form_id) {
 	}
 
 	foreach ($params as $key => $value) {
-		$extra_total += ($value - 1) * $prices[$key];
-	}
+    $currentPrice = ($value - 1) * $prices[$key];
+		$extra_total += $currentPrice;
+  }
 
 	$result = $extra_total + $room_options_total;
 	$form['submitted'][$contribution_amount_key]['#default_value'] = (string)$result;
